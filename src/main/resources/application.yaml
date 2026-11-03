@@ -1,3 +1,19 @@
 spring:
   application:
     name: spring-chat-application
+  liquibase:
+    enabled: true
+    drop-first: true
+  datasource:
+    url: jdbc:postgresql://localhost/messenger
+    username: postgres
+    password: admin
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: none
+logging:
+  group:
+    app: "ru.gelman.spring_chat_application"
+  level:
+    app: "debug"

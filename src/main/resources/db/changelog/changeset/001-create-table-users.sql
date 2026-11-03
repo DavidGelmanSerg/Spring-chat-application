@@ -1,0 +1,7 @@
+CREATE TABLE users(
+    id SERIAL PRIMARY KEY,
+    name CHARACTER VARYING(50) NOT NULL,
+    email CHARACTER VARYING(100) NOT NULL UNIQUE,
+    is_online BOOLEAN,
+    created_at TIMESTAMP
+);
