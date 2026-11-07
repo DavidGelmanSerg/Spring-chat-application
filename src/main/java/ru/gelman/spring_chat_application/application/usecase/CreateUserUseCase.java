@@ -3,6 +3,7 @@ package ru.gelman.spring_chat_application.application.usecase;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ru.gelman.spring_chat_application.application.dto.CreateUserCommand;
 import ru.gelman.spring_chat_application.application.dto.UserDetails;
 import ru.gelman.spring_chat_application.application.mapper.UserMapper;
@@ -22,6 +23,7 @@ public class CreateUserUseCase {
         this.mapper = mapper;
     }
 
+    @Transactional
     public UserDetails create(CreateUserCommand request) {
         if (repository.existsByEmail(request.email())) {
             throw new UserAlreadyExistsException(request.email());
