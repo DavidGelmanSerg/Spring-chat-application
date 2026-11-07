@@ -5,7 +5,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
-import ru.gelman.spring_chat_application.domain.exception.ChatException;
 import ru.gelman.spring_chat_application.domain.exception.SelfChatNotAllowedException;
 import ru.gelman.spring_chat_application.domain.exception.UserAlreadyExistsException;
 import ru.gelman.spring_chat_application.domain.exception.UserNotFoundException;

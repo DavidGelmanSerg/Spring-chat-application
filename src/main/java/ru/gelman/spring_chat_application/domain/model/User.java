@@ -1,9 +1,10 @@
 package ru.gelman.spring_chat_application.domain.model;
 
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
 import org.hibernate.annotations.CreationTimestamp;
-import ru.gelman.spring_chat_application.domain.model.ChatMember;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
