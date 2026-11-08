@@ -5,9 +5,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
-import ru.gelman.spring_chat_application.domain.exception.SelfChatNotAllowedException;
-import ru.gelman.spring_chat_application.domain.exception.UserAlreadyExistsException;
-import ru.gelman.spring_chat_application.domain.exception.UserNotFoundException;
+import ru.gelman.spring_chat_application.domain.exception.*;
 
 @ControllerAdvice
 @Slf4j
@@ -25,8 +23,12 @@ public class MessengerExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
     }
 
-    @ExceptionHandler(SelfChatNotAllowedException.class)
-    public ResponseEntity<?> selfChatNotAllowedException(SelfChatNotAllowedException ex) {
+    @ExceptionHandler({
+            SelfChatNotAllowedException.class,
+            GroupChatWithoutOwnerCreationException.class,
+            EmptyMemberListException.class
+    })
+    public ResponseEntity<?> badRequestExceptionHandler(Throwable ex) {
         log.error(ex.getMessage());
         return ResponseEntity.badRequest().body(ex.getMessage());
     }
