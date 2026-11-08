@@ -46,4 +46,12 @@ public class Chat {
         chat.description = null;
         return chat;
     }
+
+    public static Chat group(String name, String description) {
+        Chat chat = new Chat();
+        chat.type = ChatType.GROUP;
+        chat.name = name;
+        chat.description = description;
+        return chat;
+    }
 }

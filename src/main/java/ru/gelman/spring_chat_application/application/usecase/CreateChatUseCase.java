@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.gelman.spring_chat_application.application.dto.ChatDetails;
+import ru.gelman.spring_chat_application.application.dto.CreateGroupChatCommand;
 import ru.gelman.spring_chat_application.application.dto.CreatePersonalChatCommand;
 import ru.gelman.spring_chat_application.application.mapper.ChatMapper;
 import ru.gelman.spring_chat_application.application.mapper.ChatMemberMapper;
@@ -13,7 +14,8 @@ import ru.gelman.spring_chat_application.domain.model.Chat;
 import ru.gelman.spring_chat_application.domain.model.ChatMember;
 import ru.gelman.spring_chat_application.domain.model.ChatRole;
 import ru.gelman.spring_chat_application.domain.model.User;
-import ru.gelman.spring_chat_application.domain.service.DirectChatService;
+import ru.gelman.spring_chat_application.domain.service.DirectChatPolicy;
+import ru.gelman.spring_chat_application.domain.service.GroupChatPolicy;
 import ru.gelman.spring_chat_application.infrastructure.persistence.ChatMemberRepository;
 import ru.gelman.spring_chat_application.infrastructure.persistence.ChatRepository;
 
@@ -27,17 +29,19 @@ public class CreateChatUseCase {
     private final ChatMemberRepository chatMemberRepository;
     private final ChatMapper chatMapper;
     private final ChatMemberMapper chatMemberMapper;
-    private final DirectChatService directChatPolicy;
+    private final DirectChatPolicy directChatPolicy;
     private final UserQueryService userQueryService;
+    private final GroupChatPolicy groupChatPolicy;
 
     @Autowired
-    public CreateChatUseCase(ChatRepository chatRepository, ChatMemberRepository chatMemberRepository, ChatMapper chatMapper, ChatMemberMapper chatMemberMapper, DirectChatService directChatPolicy, UserQueryService service) {
+    public CreateChatUseCase(ChatRepository chatRepository, ChatMemberRepository chatMemberRepository, ChatMapper chatMapper, ChatMemberMapper chatMemberMapper, DirectChatPolicy directChatPolicy, UserQueryService service, GroupChatPolicy groupChatPolicy) {
         this.chatRepository = chatRepository;
         this.chatMemberRepository = chatMemberRepository;
         this.chatMapper = chatMapper;
         this.chatMemberMapper = chatMemberMapper;
         this.directChatPolicy = directChatPolicy;
         this.userQueryService = service;
+        this.groupChatPolicy = groupChatPolicy;
     }
 
     @Transactional
@@ -61,5 +65,19 @@ public class CreateChatUseCase {
         );
 
         return chatMapper.convert(created, chatMemberMapper.convert(members));
+    }
+
+    @Transactional
+    public ChatDetails createGroup(CreateGroupChatCommand request) {
+        groupChatPolicy.assertCanCreateGroupChatFor(request.userIds(), request.ownerId());
+        Chat chat = chatRepository.save(Chat.group(request.name(), request.description()));
+
+        List<ChatMember> members = request.userIds().stream()
+                .map(userQueryService::findById)
+                .map(u -> ChatMember.of(chat, u, u.getId().equals(request.ownerId()) ? ChatRole.OWNER : ChatRole.MEMBER))
+                .toList();
+
+        List<ChatMember> resultMembers = chatMemberRepository.saveAll(members);
+        return chatMapper.convert(chat, chatMemberMapper.convert(resultMembers));
     }
 }

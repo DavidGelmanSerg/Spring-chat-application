@@ -5,10 +5,10 @@ import org.junit.jupiter.api.Test;
 import ru.gelman.spring_chat_application.TestUserFactory;
 import ru.gelman.spring_chat_application.domain.exception.SelfChatNotAllowedException;
 import ru.gelman.spring_chat_application.domain.model.User;
-import ru.gelman.spring_chat_application.domain.service.DirectChatService;
+import ru.gelman.spring_chat_application.domain.service.DirectChatPolicy;
 
-public class DirectChatServiceTests {
-    private final DirectChatService directChatService = new DirectChatService();
+public class DirectChatPolicyTests {
+    private final DirectChatPolicy directChatService = new DirectChatPolicy();
 
     @Test
     public void shouldBeSuccessfulAssertionAndDoNothingTest() {

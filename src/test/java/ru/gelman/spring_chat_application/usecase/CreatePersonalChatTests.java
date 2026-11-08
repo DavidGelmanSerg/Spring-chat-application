@@ -15,7 +15,7 @@ import ru.gelman.spring_chat_application.application.mapper.ChatMemberMapper;
 import ru.gelman.spring_chat_application.application.query.UserQueryService;
 import ru.gelman.spring_chat_application.application.usecase.CreateChatUseCase;
 import ru.gelman.spring_chat_application.domain.model.*;
-import ru.gelman.spring_chat_application.domain.service.DirectChatService;
+import ru.gelman.spring_chat_application.domain.service.DirectChatPolicy;
 import ru.gelman.spring_chat_application.infrastructure.persistence.ChatMemberRepository;
 import ru.gelman.spring_chat_application.infrastructure.persistence.ChatRepository;
 
@@ -39,7 +39,7 @@ public class CreatePersonalChatTests {
     @Autowired
     private ChatMemberMapper chatMemberMapper;
     @MockitoBean
-    private DirectChatService directChatPolicy;
+    private DirectChatPolicy directChatPolicy;
     @MockitoBean
     private UserQueryService userQueryService;
 
