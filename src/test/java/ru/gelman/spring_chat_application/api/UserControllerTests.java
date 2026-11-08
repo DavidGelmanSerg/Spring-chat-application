@@ -11,9 +11,11 @@ import org.springframework.test.web.servlet.MockMvc;
 import ru.gelman.spring_chat_application.application.dto.CreateUserCommand;
 import ru.gelman.spring_chat_application.application.dto.UserDetails;
 import ru.gelman.spring_chat_application.application.usecase.CreateUserUseCase;
+import ru.gelman.spring_chat_application.domain.exception.UserAlreadyExistsException;
 import ru.gelman.spring_chat_application.infrastructure.web.UserController;
 import tools.jackson.databind.ObjectMapper;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -42,5 +44,18 @@ public class UserControllerTests {
                 .andExpect(jsonPath("$.name", Matchers.equalTo(created.name())))
                 .andExpect(jsonPath("$.email", Matchers.equalTo(created.email())))
                 .andExpect(jsonPath("$.isOnline", Matchers.equalTo(created.isOnline())));
+    }
+
+    @Test
+    public void postUser409ConflictTest() throws Exception {
+        Mockito.when(service.create(any(CreateUserCommand.class))).thenThrow(UserAlreadyExistsException.class);
+        CreateUserCommand request = new CreateUserCommand("testUser", "testUser@gmail.com");
+
+        mockMvc.perform(post("/users/")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON)
+                        .content(mapper.writeValueAsString(request))
+                ).andExpect(status().isConflict());
+
     }
 }

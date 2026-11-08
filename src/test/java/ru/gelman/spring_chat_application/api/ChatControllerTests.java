@@ -1,5 +1,6 @@
 package ru.gelman.spring_chat_application.api;
 
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,6 +13,9 @@ import ru.gelman.spring_chat_application.application.dto.ChatMemberDetails;
 import ru.gelman.spring_chat_application.application.dto.CreateGroupChatCommand;
 import ru.gelman.spring_chat_application.application.dto.CreatePersonalChatCommand;
 import ru.gelman.spring_chat_application.application.usecase.CreateChatUseCase;
+import ru.gelman.spring_chat_application.domain.exception.EmptyMemberListException;
+import ru.gelman.spring_chat_application.domain.exception.GroupChatWithoutOwnerCreationException;
+import ru.gelman.spring_chat_application.domain.exception.SelfChatNotAllowedException;
 import ru.gelman.spring_chat_application.domain.model.ChatRole;
 import ru.gelman.spring_chat_application.domain.model.ChatType;
 import ru.gelman.spring_chat_application.infrastructure.web.ChatController;
@@ -22,6 +26,7 @@ import java.util.List;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
+import static org.mockito.ArgumentMatchers.any;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -33,10 +38,17 @@ public class ChatControllerTests {
     private MockMvc mockMvc;
     @MockitoBean
     private CreateChatUseCase createChatUseCase;
+    private static CreatePersonalChatCommand personalChatRequest;
+    private static CreateGroupChatCommand groupChatRequest;
 
+
+    @BeforeAll
+    public static void prepareTestRequests(){
+        personalChatRequest = new CreatePersonalChatCommand(1L, 2L);
+        groupChatRequest = new CreateGroupChatCommand("testChat", "testDescription", List.of(1L, 2L, 3L), 1L);
+    }
     @Test
     public void postChatsPersonalTest() throws Exception {
-        CreatePersonalChatCommand request = new CreatePersonalChatCommand(1L, 2L);
         ChatDetails created = new ChatDetails(
                 1L,
                 null,
@@ -48,12 +60,12 @@ public class ChatControllerTests {
                         new ChatMemberDetails(2L, ChatRole.MEMBER)
                 )
         );
-        Mockito.when(createChatUseCase.createPersonal(request)).thenReturn(created);
+        Mockito.when(createChatUseCase.createPersonal(personalChatRequest)).thenReturn(created);
 
         mockMvc.perform(post("/chats/personal/")
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON)
-                        .content(mapper.writeValueAsString(request))
+                        .content(mapper.writeValueAsString(personalChatRequest))
                 ).andExpect(status().isOk())
                 .andExpect(jsonPath("$.id", equalTo(created.id().intValue())))
                 .andExpect(jsonPath("$.name").doesNotExist())
@@ -67,12 +79,21 @@ public class ChatControllerTests {
     }
 
     @Test
+    public void postChatsPersonal400BadRequestTest() throws Exception {
+        Mockito.when(createChatUseCase.createPersonal(personalChatRequest)).thenThrow(SelfChatNotAllowedException.class);
+        mockMvc.perform(post("/chats/personal/")
+                .contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON)
+                .content(mapper.writeValueAsString(personalChatRequest))
+        ).andExpect(status().isBadRequest());
+    }
+
+    @Test
     public void postChatsGroupTest() throws Exception {
-        CreateGroupChatCommand request = new CreateGroupChatCommand("testChat", "testDescription", List.of(1L, 2L, 3L), 1L);
         ChatDetails created = new ChatDetails(
                 1L,
-                request.name(),
-                request.description(),
+                groupChatRequest.name(),
+                groupChatRequest.description(),
                 ChatType.GROUP,
                 LocalDateTime.now(),
                 List.of(
@@ -81,12 +102,12 @@ public class ChatControllerTests {
                         new ChatMemberDetails(3L, ChatRole.MEMBER)
                 )
         );
-        Mockito.when(createChatUseCase.createGroup(request)).thenReturn(created);
+        Mockito.when(createChatUseCase.createGroup(groupChatRequest)).thenReturn(created);
 
         mockMvc.perform(post("/chats/group/")
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON)
-                        .content(mapper.writeValueAsString(request))
+                        .content(mapper.writeValueAsString(groupChatRequest))
                 ).andExpect(status().isOk())
                 .andExpect(jsonPath("$.id", equalTo(created.id().intValue())))
                 .andExpect(jsonPath("$.name").value(created.name()))
@@ -97,5 +118,25 @@ public class ChatControllerTests {
                 .andExpect(jsonPath("$.members", hasSize(created.members().size())))
                 .andExpect(jsonPath("$.members[*].role").exists())
                 .andExpect(jsonPath("$.members[*].userId").exists());
+    }
+
+    @Test
+    public void postChatsGroupEmptyMemberList400BadRequestTest() throws Exception {
+        Mockito.when(createChatUseCase.createGroup(any(CreateGroupChatCommand.class))).thenThrow(EmptyMemberListException.class);
+        mockMvc.perform(post("/chats/group/")
+                .contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON)
+                .content(mapper.writeValueAsString(groupChatRequest))
+        ).andExpect(status().isBadRequest());
+    }
+
+    @Test
+    public void postChatsGroupNoOwnerInUserChatList400BadRequestTest() throws Exception {
+        Mockito.when(createChatUseCase.createGroup(any(CreateGroupChatCommand.class))).thenThrow(GroupChatWithoutOwnerCreationException.class);
+        mockMvc.perform(post("/chats/group/")
+                .contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON)
+                .content(mapper.writeValueAsString(groupChatRequest))
+        ).andExpect(status().isBadRequest());
     }
 }
